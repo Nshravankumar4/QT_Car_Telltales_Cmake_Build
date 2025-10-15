@@ -1,25 +1,65 @@
 pipeline {
     agent any
+
+    environment {
+        // Update these only in Jenkins → Manage Jenkins → Global Tool Configuration
+        QT_DIR = "C:\\Qt\\5.15.2\\msvc2019_64"
+        VS_DIR = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional"
+        BUILD_DIR = "build"
+    }
+
     stages {
-        stage('Checkout') {
+
+        stage('Checkout Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Nshravankumar4/QT_Car_Telltales_Cmake_Build.git'
+                echo "Checking out source code from SCM..."
+                checkout scm
             }
         }
-        stage('Configure') {
+
+        stage('Setup Environment') {
             steps {
-                bat '"C:\\Qt\\5.15.2\\msvc2019_64\\bin\\qtenv2.bat" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release'
+                echo "Setting up Qt and Visual Studio environments..."
+                bat """
+                    call "%QT_DIR%\\bin\\qtenv2.bat"
+                    call "%VS_DIR%\\VC\\Auxiliary\\Build\\vcvarsall.bat" x64
+                """
             }
         }
-        stage('Build') {
+
+        stage('CMake Configure') {
             steps {
-                bat 'cmake --build build --config Release'
+                echo "Running CMake configuration..."
+                bat """
+                    cd /d "%WORKSPACE%"
+                    cmake -S . -B "%BUILD_DIR%" -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="%QT_DIR%\\lib\\cmake"
+                """
             }
         }
-        stage('Run') {
+
+        stage('CMake Build') {
             steps {
-                bat 'build\\Release\\QtTelltaleProject.exe'
+                echo "Building project in Release mode..."
+                bat """
+                    cmake --build "%BUILD_DIR%" --config Release
+                """
             }
+        }
+
+        stage('Post Build') {
+            steps {
+                echo "Listing generated files..."
+                bat "dir /b %BUILD_DIR%\\Release"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build succeeded! Executable generated inside build\\Release folder."
+        }
+        failure {
+            echo "❌ Build failed. Check logs above for errors."
         }
     }
 }
