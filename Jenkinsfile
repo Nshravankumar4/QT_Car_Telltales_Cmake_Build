@@ -19,7 +19,10 @@ pipeline {
             steps {
                 echo "Running setup repository batch script..."
                 // Call batch file with main branch argument
-                bat 'call "Scripts\\Setup_Repo.bat" main'
+                bat """
+                    call "Scripts\\Setup_Repo.bat" main
+                """
+
             }
         }
 
@@ -87,4 +90,5 @@ pipeline {
         }
     }
 }
+
 
