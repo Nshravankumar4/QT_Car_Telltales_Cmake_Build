@@ -1,21 +1,30 @@
-REM 1 - git branch to setup
-REM Sequence of these git commands is mandatory to cover various states of git repos.
-REM If CI/CD build is broken, check this script is not in subject of change.
+@echo off
+REM ============================================
+REM Setup_Repo.bat - Sets up repository branch
+REM ============================================
 
-if "%1"=="" exit /b 1
-if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+set BRANCH=%1
+if "%BRANCH%"=="" (
+    echo [ERROR] No branch name provided. Usage: Setup_Repo.bat <branch-name>
+    exit /b 1
+)
 
-git fetch origin %1
+echo [INFO] Setting up repository for branch: %BRANCH%
+
+git fetch origin %BRANCH%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 git clean -dfx
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-git reset --hard origin/%1
+git reset --hard origin/%BRANCH%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-git checkout %1
+git checkout %BRANCH%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-git pull origin %1
+git pull origin %BRANCH%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+echo [INFO] Repository setup completed successfully.
+exit /b 0
