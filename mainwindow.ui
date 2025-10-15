@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Car Telltales</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+    <!-- LEFT indicator -->
+    <widget class="QLabel" name="leftIndicatorLabel">
+      <property name="geometry">
+        <rect>
+          <x>20</x> <!-- left side -->
+          <y>50</y>
+          <width>150</width> <!-- increased width -->
+          <height>150</height> <!-- increased height -->
+        </rect>
+      </property>
+    </widget>
+
+    <!-- RIGHT indicator -->
+    <widget class="QLabel" name="rightIndicatorLabel">
+      <property name="geometry">
+        <rect>
+          <x>330</x> <!-- right side -->
+          <y>50</y>
+          <width>150</width> <!-- increased width -->
+          <height>150</height> <!-- increased height -->
+        </rect>
+      </property>
+    </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
