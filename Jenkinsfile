@@ -19,7 +19,7 @@ pipeline {
             steps {
                 echo "Running setup repository batch script..."
                 bat """
-                    cd /d "%WORKSPACE%\\QT_Car_Telltales_Cmake_Build\\Scripts"
+                    cd /d "%WORKSPACE%\\Scripts"
                     call Setup_Repo.bat
                 """
             }
