@@ -2,18 +2,26 @@ pipeline {
     agent any
 
     environment {
-        // Update these only in Jenkins → Manage Jenkins → Global Tool Configuration
         QT_DIR = "C:\\Qt\\5.15.2\\msvc2019_64"
         VS_DIR = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional"
         BUILD_DIR = "build"
     }
 
     stages {
-
         stage('Checkout Repository') {
             steps {
                 echo "Checking out source code from SCM..."
                 checkout scm
+            }
+        }
+
+        stage('Setup Repository') {
+            steps {
+                echo "Running setup repository batch script..."
+                bat """
+                    cd /d "%WORKSPACE%\\Scripts"
+                    call Setup_Repo.bat
+                """
             }
         }
 
