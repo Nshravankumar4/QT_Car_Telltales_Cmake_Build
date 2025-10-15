@@ -1,39 +1,26 @@
 pipeline {
     agent any
-
-    environment {
-        QT_PATH = "C:\\Qt\\5.15.2\\msvc2019_64"  // Path to your Qt installation
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/Nshravankumar4/QT_Car_Telltales_Cmake_Build.git'
             }
         }
-
         stage('Configure') {
             steps {
-                bat "\"${env.QT_PATH}\\bin\\qtenv2.bat\" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release"
+                bat 'call "C:\\Qt\\5.15.2\\msvc2019_64\\bin\\qtenv2.bat"'
+                bat 'cmake -S %WORKSPACE% -B %WORKSPACE%\\build -DCMAKE_BUILD_TYPE=Release'
             }
         }
-
         stage('Build') {
             steps {
-                bat "cmake --build build --config Release"
+                bat 'cmake --build %WORKSPACE%\\build --config Release'
             }
         }
-
-        stage('Run') {
+        stage('Archive') {
             steps {
-                bat "build\\Release\\QtTelltaleProject.exe"
+                archiveArtifacts artifacts: 'build/**', fingerprint: true
             }
-        }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'build/**/*', allowEmptyArchive: true
         }
     }
 }
