@@ -8,34 +8,57 @@ on:
     branches:
       - main
 
-env:
-  QT_DIR: C:\Qt\5.15.2\msvc2019_64
-  VS_DIR: C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional
-  BUILD_DIR: build
-
 jobs:
   build:
     runs-on: windows-latest
+    
+    env:
+      QT_DIR: C:\Qt\5.15.2\msvc2019_64
+      VS_DIR: C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional
+      BUILD_DIR: build
     
     steps:
       - name: Checkout SCM
         uses: actions/checkout@v4
       
+      - name: Check directory structure
+        shell: cmd
+        run: |
+          echo "Current workspace:"
+          cd /d "${{ github.workspace }}"
+          dir /b
+      
       - name: Setup Repository
         shell: cmd
         run: |
           echo "Running setup repository batch script..."
-          cd /d "${{ github.workspace }}\Scripts"
-          call Setup_Repo.bat main
+          if exist "${{ github.workspace }}\Scripts\Setup_Repo.bat" (
+            cd /d "${{ github.workspace }}\Scripts"
+            call Setup_Repo.bat main
+          ) else (
+            echo "Setup_Repo.bat not found. Skipping..."
+          )
       
-      - name: Setup Environment
+      - name: Setup Qt and Visual Studio
         shell: cmd
         run: |
           echo "Setting up Qt and Visual Studio environment..."
-          call "${{ env.QT_DIR }}\bin\qtenv2.bat"
-          call "${{ env.VS_DIR }}\VC\Auxiliary\Build\vcvarsall.bat" x64
+          if exist "${{ env.QT_DIR }}\bin\qtenv2.bat" (
+            call "${{ env.QT_DIR }}\bin\qtenv2.bat"
+          ) else (
+            echo "Qt environment not found at ${{ env.QT_DIR }}"
+          )
+          if exist "${{ env.VS_DIR }}\VC\Auxiliary\Build\vcvarsall.bat" (
+            call "${{ env.VS_DIR }}\VC\Auxiliary\Build\vcvarsall.bat" x64
+          ) else (
+            echo "Visual Studio environment not found at ${{ env.VS_DIR }}"
+          )
       
-      - name: Clean
+      - name: Verify CMake
+        shell: cmd
+        run: cmake --version
+      
+      - name: Clean Build Directory
         shell: cmd
         run: |
           echo "Cleaning previous build files..."
@@ -46,7 +69,8 @@ jobs:
         shell: cmd
         run: |
           echo "Configuring CMake project..."
-          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}\${{ env.BUILD_DIR }}" -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}\lib\cmake"
+          cd /d "${{ github.workspace }}"
+          cmake -S . -B ${{ env.BUILD_DIR }} -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}\lib\cmake"
       
       - name: CMake Build
         shell: cmd
@@ -54,23 +78,35 @@ jobs:
           echo "Building project..."
           cmake --build "${{ github.workspace }}\${{ env.BUILD_DIR }}" --config Release
       
-      - name: Run
+      - name: List Output Files
+        shell: cmd
+        run: |
+          echo "Listing build output..."
+          if exist "${{ github.workspace }}\${{ env.BUILD_DIR }}\Release" (
+            dir /b "${{ github.workspace }}\${{ env.BUILD_DIR }}\Release"
+          ) else (
+            echo "Release directory not found"
+          )
+      
+      - name: Run Executable
         shell: cmd
         run: |
           echo "Running executable..."
-          "${{ github.workspace }}\${{ env.BUILD_DIR }}\Release\QtTelltaleProject.exe"
+          if exist "${{ github.workspace }}\${{ env.BUILD_DIR }}\Release\QtTelltaleProject.exe" (
+            "${{ github.workspace }}\${{ env.BUILD_DIR }}\Release\QtTelltaleProject.exe"
+          ) else (
+            echo "Executable not found"
+          )
       
-      - name: Archive Artifacts
+      - name: Upload Artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: QtTelltaleProject
           path: ${{ env.BUILD_DIR }}\Release\QtTelltaleProject.exe
           retention-days: 30
-      
-      - name: Build Success
-        if: success()
-        run: echo "Build completed successfully!"
-      
-      - name: Build Failure
-        if: failure()
-        run: echo "Build failed. Check logs above for errors."
+    
+    post:
+      always:
+        - name: Build Result
+          run: echo "Build workflow completed"
