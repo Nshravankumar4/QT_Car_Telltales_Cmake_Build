@@ -1,0 +1,3 @@
+C:/remove/QtTelltaleProject/QT_Car_Telltales_Cmake_Build/build/CMakeFiles/QtTelltaleProject.dir
+C:/remove/QtTelltaleProject/QT_Car_Telltales_Cmake_Build/build/CMakeFiles/ALL_BUILD.dir
+C:/remove/QtTelltaleProject/QT_Car_Telltales_Cmake_Build/build/CMakeFiles/ZERO_CHECK.dir
