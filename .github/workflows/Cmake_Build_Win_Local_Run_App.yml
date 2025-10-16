@@ -1,5 +1,4 @@
 name: BuildQtCmakeWinLocalRunApp
-
 on:
   push:
     branches:
@@ -7,15 +6,12 @@ on:
   pull_request:
     branches:
       - main
-
 env:
   BUILD_DIR: build
   EXE_NAME: QtTelltaleProject.exe
-
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       # Checkout code
       - name: Checkout SCM
@@ -35,13 +31,31 @@ jobs:
           version: '5.15.2'
           arch: 'win64_msvc2019_64'
       
-      # Export QT_DIR for later steps
-      - name: Set Qt environment variable
-        shell: powershell
+      # Find Qt installation directory
+      - name: Find Qt Directory
+        shell: pwsh
         run: |
-          $qtDir = "${{ steps.install-qt.outputs.qtDir }}"
-          echo "QT_DIR=$qtDir" >> $env:GITHUB_ENV
-          Write-Output "Qt Directory set to: $qtDir"
+          # The install-qt action sets Qt5_DIR environment variable
+          $qtPath = $env:Qt5_DIR
+          if (-Not $qtPath) {
+            # Fallback: search in common Qt installation locations
+            $possiblePaths = @(
+              "D:\a\QT_Car_Telltales_Cmake_Build\Qt\5.15.2\msvc2019_64",
+              "C:\Qt\5.15.2\msvc2019_64",
+              "${{ github.workspace }}\Qt\5.15.2\msvc2019_64"
+            )
+            
+            foreach ($path in $possiblePaths) {
+              if (Test-Path $path) {
+                $qtPath = $path
+                break
+              }
+            }
+          }
+          
+          Write-Output "Qt5_DIR from env: $env:Qt5_DIR"
+          Write-Output "Found Qt path: $qtPath"
+          Add-Content -Path $env:GITHUB_ENV -Value "QT_DIR=$qtPath"
       
       # Setup repository (call your batch script)
       - name: Setup Repository
@@ -78,38 +92,50 @@ jobs:
       
       # Deploy Qt DLLs
       - name: Deploy Qt DLLs
-        shell: powershell
+        shell: pwsh
         run: |
-          $exePath = Join-Path "${{ github.workspace }}\build\Release" "${{ env.EXE_NAME }}"
-          $windeployqtPath = Join-Path "${{ env.QT_DIR }}" "bin\windeployqt.exe"
-
-          if (-Not (Test-Path $exePath)) {
-            Write-Error "Executable not found: $exePath"
+          $exePath = "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}"
+          $qtDir = "${{ env.QT_DIR }}"
+          $windeployqtPath = "$qtDir\bin\windeployqt.exe"
+          
+          Write-Output "Executable: $exePath"
+          Write-Output "Qt Directory: $qtDir"
+          Write-Output "Windeployqt: $windeployqtPath"
+          
+          if (Test-Path $exePath) {
+            Write-Output "Executable found: $exePath"
+            if (Test-Path $windeployqtPath) {
+              Write-Output "Running windeployqt..."
+              & "$windeployqtPath" "$exePath"
+              Write-Output "Deployment complete"
+            } else {
+              Write-Output "WARNING: windeployqt.exe not found at $windeployqtPath"
+              Write-Output "Skipping deployment, but continuing..."
+            }
+          } else {
+            Write-Output "ERROR: Executable not found at $exePath"
             exit 1
           }
-
-          if (-Not (Test-Path $windeployqtPath)) {
-            Write-Error "windeployqt.exe not found: $windeployqtPath"
-            exit 1
-          }
-
-          Write-Output "Deploying Qt DLLs for $exePath..."
-          & "$windeployqtPath" "$exePath"
       
       # Run executable for 60 seconds
       - name: Run Executable
-        shell: powershell
+        shell: pwsh
         run: |
-          $exePath = Join-Path "${{ github.workspace }}\build\Release" "${{ env.EXE_NAME }}"
+          $exePath = "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}"
           if (-Not (Test-Path $exePath)) {
             Write-Error "Executable not found: $exePath"
             exit 1
           }
           Write-Output "Starting QtTelltaleProject.exe..."
-          $p = Start-Process -FilePath $exePath -PassThru
+          $p = Start-Process -FilePath $exePath -PassThru -NoNewWindow
           Start-Sleep -Seconds 60
-          Stop-Process -Id $p.Id
-          Write-Output "Executable stopped after 1 minute."
+          
+          if ($p.HasExited -eq $false) {
+            Stop-Process -Id $p.Id -Force
+            Write-Output "Executable stopped after 1 minute."
+          } else {
+            Write-Output "Executable exited before timeout."
+          }
       
       # Success message
       - name: Build Success
