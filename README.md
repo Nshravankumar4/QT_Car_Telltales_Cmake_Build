@@ -1,3 +1,5 @@
+<img width="1859" height="834" alt="image" src="https://github.com/user-attachments/assets/d84aeabb-4be0-4ae2-98e0-435c2c3b6087" /> <img width="1804" height="793" alt="image" src="https://github.com/user-attachments/assets/1f3f61e0-5fd0-49cd-bd35-cd1436f60bfe" /> 
+<img width="1062" height="471" alt="image" src="https://github.com/user-attachments/assets/e34f826e-e63a-4c15-b7a3-ffb4c3a5bd3f" />
 
 
 # CI/CD Workflow Documentation
@@ -805,3 +807,4 @@ This CI/CD pipeline provides:
 - Use branch protection to enforce code quality
 
 Result: Main branch always contains tested, working code with secure, automated deployment pipeline.
+
