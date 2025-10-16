@@ -1,4 +1,4 @@
-name: Build Qt Car Telltales
+name: BuildQtCmakeWinLocalRunApp
 
 on:
   push:
@@ -107,3 +107,4 @@ jobs:
       - name: Build Failure
         if: failure()
         run: echo "✗ Build failed. Check logs above for errors."
+
