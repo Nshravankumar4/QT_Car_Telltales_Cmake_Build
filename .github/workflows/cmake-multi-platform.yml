@@ -1,4 +1,4 @@
-name: Build Qt Car Telltales
+name: QtBuild 
 
 on:
   push:
@@ -63,3 +63,4 @@ jobs:
       - name: Build Failure
         if: failure()
         run: echo "✗ Build failed. Check logs above for errors."
+
