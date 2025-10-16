@@ -9,7 +9,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout SCM') {
             steps {
                 ws('C:\\Jenkins\\workspace\\QT_Car_Telltales_Cmake_BuildApplication') {
@@ -100,7 +99,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {

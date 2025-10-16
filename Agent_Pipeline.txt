@@ -1,0 +1,29 @@
+Agent Pipeline
+Edit description
+Mark this node temporarily offline
+Pipeline script
+Connection was broken
+
+Run from agent command line: (Unix) 
+curl -sO https://margherita-unpolished-unanswerably.ngrok-free.dev/jnlpJars/agent.jar
+java -jar agent.jar -url https://margherita-unpolished-unanswerably.ngrok-free.dev/ -secret 927745855b56c724990a34ce266709985be8dc9611943428e18dbc7064c901dc -name Pipeline -webSocket -workDir "C:\Jenkins\workspace"
+Run from agent command line: (Windows) 
+curl.exe -sO https://margherita-unpolished-unanswerably.ngrok-free.dev/jnlpJars/agent.jar
+java -jar agent.jar -url https://margherita-unpolished-unanswerably.ngrok-free.dev/ -secret 927745855b56c724990a34ce266709985be8dc9611943428e18dbc7064c901dc -name Pipeline -webSocket -workDir "C:\Jenkins\workspace"
+Or run from agent command line, with the secret stored in a file: (Unix) 
+echo 927745855b56c724990a34ce266709985be8dc9611943428e18dbc7064c901dc > secret-file
+curl -sO https://margherita-unpolished-unanswerably.ngrok-free.dev/jnlpJars/agent.jar
+java -jar agent.jar -url https://margherita-unpolished-unanswerably.ngrok-free.dev/ -secret @secret-file -name Pipeline -webSocket -workDir "C:\Jenkins\workspace"
+Or run from agent command line, with the secret stored in a file: (Windows) 
+echo 927745855b56c724990a34ce266709985be8dc9611943428e18dbc7064c901dc> secret-file
+curl.exe -sO https://margherita-unpolished-unanswerably.ngrok-free.dev/jnlpJars/agent.jar
+java -jar agent.jar -url https://margherita-unpolished-unanswerably.ngrok-free.dev/ -secret @secret-file -name Pipeline -webSocket -workDir "C:\Jenkins\workspace"
+If you prefer to use TCP instead of WebSockets, remove the -webSocket option. Run java -jar agent.jar -help for more.
+
+Note: PowerShell users must use curl.exe instead of curl because curl is a default PowerShell cmdlet alias for Invoke-WebRequest.
+
+Monitoring Data
+Labels
+CmakeQtBuildWindows
+Projects tied to Pipeline
+None
