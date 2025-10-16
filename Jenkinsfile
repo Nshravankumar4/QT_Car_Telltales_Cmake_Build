@@ -55,20 +55,20 @@ pipeline {
                 """
             }
         }
-        stage('Run') {
-            steps {
-                echo "Running executable..."
-                bat """
-                    "%WORKSPACE%\\%BUILD_DIR%\\Release\\QtTelltaleProject.exe"
-                """
-            }
-        }
-        stage('Archive Artifacts') {
-            steps {
-                echo "Archiving built executable..."
-                archiveArtifacts artifacts: '%BUILD_DIR%\\Release\\QtTelltaleProject.exe', fingerprint: true, allowEmptyArchive: false
-            }
-        }
+        // stage('Run') {
+        //     steps {
+        //         echo "Running executable..."
+        //         bat """
+        //             "%WORKSPACE%\\%BUILD_DIR%\\Release\\QtTelltaleProject.exe"
+        //         """
+        //     }
+        // }
+        // stage('Archive Artifacts') {
+        //     steps {
+        //         echo "Archiving built executable..."
+        //         archiveArtifacts artifacts: '%BUILD_DIR%\\Release\\QtTelltaleProject.exe', fingerprint: true, allowEmptyArchive: false
+        //     }
+        // }
     }
     post {
         success {
@@ -79,3 +79,4 @@ pipeline {
         }
     }
 }
+
