@@ -1,5 +1,4 @@
 name: BuildQtCmakeWinLocalRunApp
-
 on:
   push:
     branches:
@@ -7,26 +6,23 @@ on:
   pull_request:
     branches:
       - main
-
 env:
   BUILD_DIR: build
   EXE_NAME: QtTelltaleProject.exe
-
 jobs:
   build:
     runs-on: windows-latest
-    
     steps:
       # Checkout code
       - name: Checkout SCM
         uses: actions/checkout@v4
-
+      
       # Setup MSVC environment
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-
+      
       # Install Qt
       - name: Install Qt
         id: install-qt
@@ -34,11 +30,15 @@ jobs:
         with:
           version: '5.15.2'
           arch: 'win64_msvc2019_64'
-
-      # Export QT_DIR for later steps
+      
+      # Export QT_DIR for later steps (FIXED - use PowerShell)
       - name: Set Qt environment variable
-        run: echo "QT_DIR=${{ steps.install-qt.outputs.qtDir }}" >> $GITHUB_ENV
-
+        shell: powershell
+        run: |
+          $qtDir = "${{ steps.install-qt.outputs.qtDir }}"
+          echo "QT_DIR=$qtDir" >> $env:GITHUB_ENV
+          echo "Qt Directory: $qtDir"
+      
       # Setup repository (call your batch script)
       - name: Setup Repository
         shell: cmd
@@ -49,7 +49,7 @@ jobs:
           ) else (
             echo "Setup_Repo.bat not found, skipping..."
           )
-
+      
       # Clean previous build
       - name: Clean
         shell: cmd
@@ -57,54 +57,56 @@ jobs:
           echo "Cleaning previous build files..."
           if exist "${{ github.workspace }}\build" rmdir /S /Q "${{ github.workspace }}\build"
           if exist "${{ github.workspace }}\CMakeCache.txt" del "${{ github.workspace }}\CMakeCache.txt"
-
+      
       # CMake Configure
       - name: CMake Configure
         shell: cmd
         run: |
           echo "Configuring CMake project..."
           cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}\build" -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}\lib\cmake"
-
+      
       # CMake Build
       - name: CMake Build
         shell: cmd
         run: |
           echo "Building project..."
           cmake --build "${{ github.workspace }}\build" --config Release
-
-      # Deploy Qt DLLs
+      
+      # Deploy Qt DLLs (FIXED - use PowerShell with proper path handling)
       - name: Deploy Qt DLLs
-        shell: cmd
+        shell: powershell
         run: |
-          echo "Deploying Qt DLLs using windeployqt..."
-          if exist "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}" (
-            "%QT_DIR%\bin\windeployqt.exe" "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}"
-          ) else (
-            echo "Executable not found, skipping windeployqt."
-          )
-
+          $exePath = Join-Path "${{ github.workspace }}\build\Release" "${{ env.EXE_NAME }}"
+          $windeployqtPath = Join-Path "${{ env.QT_DIR }}" "bin\windeployqt.exe"
+          
+          if (Test-Path $exePath) {
+            echo "Deploying Qt DLLs..."
+            & "$windeployqtPath" "$exePath"
+          } else {
+            echo "Executable not found: $exePath"
+          }
+      
       # Run executable for 60 seconds
       - name: Run Executable
         shell: powershell
         run: |
           $exePath = Join-Path "${{ github.workspace }}\build\Release" "${{ env.EXE_NAME }}"
           if (-Not (Test-Path $exePath)) {
-              Write-Error "Executable not found: $exePath"
-              exit 1
+            Write-Error "Executable not found: $exePath"
+            exit 1
           }
           Write-Output "Starting QtTelltaleProject.exe..."
           $p = Start-Process -FilePath $exePath -PassThru
           Start-Sleep -Seconds 60
           Stop-Process -Id $p.Id
           Write-Output "Executable stopped after 1 minute."
-
+      
       # Success message
       - name: Build Success
         if: success()
         run: echo "✓ Build completed successfully!"
-
+      
       # Failure message
       - name: Build Failure
         if: failure()
         run: echo "✗ Build failed. Check logs above for errors."
-
