@@ -23,9 +23,7 @@ pipeline {
             steps {
                 ws('C:\\Jenkins\\workspace\\QT_Car_Telltales_Cmake_BuildApplication') {
                     echo "Running setup repository batch script..."
-                    bat """
-                        call "%WORKSPACE%\\Scripts\\Setup_Repo.bat" main
-                    """
+                    bat 'call "%WORKSPACE%\\Scripts\\Setup_Repo.bat" main'
                 }
             }
         }
@@ -69,9 +67,7 @@ pipeline {
             steps {
                 ws('C:\\Jenkins\\workspace\\QT_Car_Telltales_Cmake_BuildApplication') {
                     echo "Building project..."
-                    bat """
-                        cmake --build "%WORKSPACE%\\%BUILD_DIR%" --config Release
-                    """
+                    bat 'cmake --build "%WORKSPACE%\\%BUILD_DIR%" --config Release'
                 }
             }
         }
@@ -81,11 +77,25 @@ pipeline {
                 ws('C:\\Jenkins\\workspace\\QT_Car_Telltales_Cmake_BuildApplication') {
                     echo "Running built executable for 1 minute..."
                     powershell """
+                        # Set paths
                         \$exePath = Join-Path "\$env:WORKSPACE\\\$env:BUILD_DIR\\Release" "\$env:EXE_NAME"
-                        & "\$env:QT_DIR\\bin\\windeployqt.exe" \$exePath
+
+                        # Check if executable exists
+                        if (-Not (Test-Path \$exePath)) {
+                            Write-Error "Executable not found: \$exePath"
+                            exit 1
+                        }
+
+                        # Run executable
+                        Write-Output "Starting QtTelltaleProject.exe..."
                         \$p = Start-Process -FilePath \$exePath -PassThru
+
+                        # Wait 60 seconds
                         Start-Sleep -Seconds 60
+
+                        # Kill process
                         Stop-Process -Id \$p.Id
+                        Write-Output "Executable stopped after 1 minute."
                     """
                 }
             }
