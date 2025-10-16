@@ -1,4 +1,5 @@
 name: BuildQtCmakeWinLocalRunApp
+
 on:
   push:
     branches:
@@ -6,12 +7,15 @@ on:
   pull_request:
     branches:
       - main
+
 env:
   BUILD_DIR: build
   EXE_NAME: QtTelltaleProject.exe
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       # Checkout code
       - name: Checkout SCM
@@ -31,13 +35,13 @@ jobs:
           version: '5.15.2'
           arch: 'win64_msvc2019_64'
       
-      # Export QT_DIR for later steps (FIXED - use PowerShell)
+      # Export QT_DIR for later steps
       - name: Set Qt environment variable
         shell: powershell
         run: |
           $qtDir = "${{ steps.install-qt.outputs.qtDir }}"
           echo "QT_DIR=$qtDir" >> $env:GITHUB_ENV
-          echo "Qt Directory: $qtDir"
+          Write-Output "Qt Directory set to: $qtDir"
       
       # Setup repository (call your batch script)
       - name: Setup Repository
@@ -72,19 +76,25 @@ jobs:
           echo "Building project..."
           cmake --build "${{ github.workspace }}\build" --config Release
       
-      # Deploy Qt DLLs (FIXED - use PowerShell with proper path handling)
+      # Deploy Qt DLLs
       - name: Deploy Qt DLLs
         shell: powershell
         run: |
           $exePath = Join-Path "${{ github.workspace }}\build\Release" "${{ env.EXE_NAME }}"
           $windeployqtPath = Join-Path "${{ env.QT_DIR }}" "bin\windeployqt.exe"
-          
-          if (Test-Path $exePath) {
-            echo "Deploying Qt DLLs..."
-            & "$windeployqtPath" "$exePath"
-          } else {
-            echo "Executable not found: $exePath"
+
+          if (-Not (Test-Path $exePath)) {
+            Write-Error "Executable not found: $exePath"
+            exit 1
           }
+
+          if (-Not (Test-Path $windeployqtPath)) {
+            Write-Error "windeployqt.exe not found: $windeployqtPath"
+            exit 1
+          }
+
+          Write-Output "Deploying Qt DLLs for $exePath..."
+          & "$windeployqtPath" "$exePath"
       
       # Run executable for 60 seconds
       - name: Run Executable
