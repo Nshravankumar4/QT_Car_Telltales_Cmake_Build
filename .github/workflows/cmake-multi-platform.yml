@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: self-hosted
     
     env:
       QT_DIR: C:\Qt\5.15.2\msvc2019_64
