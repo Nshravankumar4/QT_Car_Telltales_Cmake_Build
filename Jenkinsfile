@@ -1,12 +1,10 @@
 pipeline {
     agent any
-
     environment {
         QT_DIR = 'C:\\Qt\\5.15.2\\msvc2019_64'
         VS_DIR = 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional'
         BUILD_DIR = 'build'
     }
-
     stages {
         stage('Checkout SCM') {
             steps {
@@ -14,18 +12,15 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Setup Repository') {
             steps {
                 echo "Running setup repository batch script..."
-                // Call batch file with main branch argument
+                // Call batch file with absolute path to avoid syntax errors
                 bat """
-                    call "Scripts\\Setup_Repo.bat" main
+                    call "%WORKSPACE%\\Scripts\\Setup_Repo.bat" main
                 """
-
             }
         }
-
         stage('Setup Environment') {
             steps {
                 echo "Setting up Qt and Visual Studio environment..."
@@ -35,17 +30,15 @@ pipeline {
                 """
             }
         }
-
         stage('Clean') {
             steps {
                 echo "Cleaning previous build files..."
                 bat """
-                    rmdir /S /Q "%WORKSPACE%\\%BUILD_DIR%" || echo Directory not found
-                    del "%WORKSPACE%\\CMakeCache.txt" || echo No cache file found
+                    if exist "%WORKSPACE%\\%BUILD_DIR%" rmdir /S /Q "%WORKSPACE%\\%BUILD_DIR%"
+                    if exist "%WORKSPACE%\\CMakeCache.txt" del "%WORKSPACE%\\CMakeCache.txt"
                 """
             }
         }
-
         stage('CMake Configure') {
             steps {
                 echo "Configuring CMake project..."
@@ -54,7 +47,6 @@ pipeline {
                 """
             }
         }
-
         stage('CMake Build') {
             steps {
                 echo "Building project..."
@@ -63,7 +55,6 @@ pipeline {
                 """
             }
         }
-
         stage('Run') {
             steps {
                 echo "Running executable..."
@@ -72,15 +63,13 @@ pipeline {
                 """
             }
         }
-
         stage('Archive Artifacts') {
             steps {
                 echo "Archiving built executable..."
-                archiveArtifacts artifacts: '%WORKSPACE%\\%BUILD_DIR%\\Release\\QtTelltaleProject.exe', fingerprint: true
+                archiveArtifacts artifacts: '%BUILD_DIR%\\Release\\QtTelltaleProject.exe', fingerprint: true, allowEmptyArchive: false
             }
         }
     }
-
     post {
         success {
             echo "Build completed successfully!"
@@ -90,5 +79,3 @@ pipeline {
         }
     }
 }
-
-
