@@ -10,55 +10,56 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
-    
-    env:
-      QT_DIR: C:\Qt\5.15.2\msvc2019_64
-      VS_DIR: C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional
-      BUILD_DIR: build
+    runs-on: windows-latest
     
     steps:
       - name: Checkout SCM
         uses: actions/checkout@v4
+      
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          fetch-depth: 1
+          arch: x64
+      
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          arch: 'win64_msvc2019_64'
       
       - name: Setup Repository
         shell: cmd
         run: |
           echo "Running setup repository batch script..."
-          call "${{ github.workspace }}\Scripts\Setup_Repo.bat" main
-      
-      - name: Setup Environment
-        shell: cmd
-        run: |
-          echo "Setting up Qt and Visual Studio environment..."
-          call "${{ env.QT_DIR }}\bin\qtenv2.bat"
-          call "${{ env.VS_DIR }}\VC\Auxiliary\Build\vcvarsall.bat" x64
+          if exist "${{ github.workspace }}\Scripts\Setup_Repo.bat" (
+            call "${{ github.workspace }}\Scripts\Setup_Repo.bat" main
+          ) else (
+            echo "Setup_Repo.bat not found, skipping..."
+          )
       
       - name: Clean
         shell: cmd
         run: |
           echo "Cleaning previous build files..."
-          if exist "${{ github.workspace }}\${{ env.BUILD_DIR }}" rmdir /S /Q "${{ github.workspace }}\${{ env.BUILD_DIR }}"
+          if exist "${{ github.workspace }}\build" rmdir /S /Q "${{ github.workspace }}\build"
           if exist "${{ github.workspace }}\CMakeCache.txt" del "${{ github.workspace }}\CMakeCache.txt"
       
       - name: CMake Configure
         shell: cmd
         run: |
           echo "Configuring CMake project..."
-          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}\${{ env.BUILD_DIR }}" -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}\lib\cmake"
+          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}\build" -G "Visual Studio 16 2019" -A x64 -DCMAKE_PREFIX_PATH="${{ env.Qt5_DIR }}\lib\cmake"
       
       - name: CMake Build
         shell: cmd
         run: |
           echo "Building project..."
-          cmake --build "${{ github.workspace }}\${{ env.BUILD_DIR }}" --config Release
+          cmake --build "${{ github.workspace }}\build" --config Release
       
       - name: Build Success
         if: success()
-        run: echo "Build completed successfully!"
+        run: echo "✓ Build completed successfully!"
       
       - name: Build Failure
         if: failure()
-        run: echo "Build failed. Check logs above for errors."
+        run: echo "✗ Build failed. Check logs above for errors."
