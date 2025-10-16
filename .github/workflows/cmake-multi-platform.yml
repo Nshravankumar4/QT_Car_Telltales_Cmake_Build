@@ -54,12 +54,11 @@ jobs:
         run: |
           echo "Building project..."
           cmake --build "${{ github.workspace }}\${{ env.BUILD_DIR }}" --config Release
-    
-    post:
-      success:
-        - name: Build Success
-          run: echo "Build completed successfully!"
       
-      failure:
-        - name: Build Failure
-          run: echo "Build failed. Check logs above for errors."
+      - name: Build Success
+        if: success()
+        run: echo "Build completed successfully!"
+      
+      - name: Build Failure
+        if: failure()
+        run: echo "Build failed. Check logs above for errors."
