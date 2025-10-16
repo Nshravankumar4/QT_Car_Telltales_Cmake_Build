@@ -1,0 +1,148 @@
+name: BuildQtCmakeWinLocalRunApp
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+  BUILD_DIR: build
+  EXE_NAME: QtTelltaleProject.exe
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      # Checkout code
+      - name: Checkout SCM
+        uses: actions/checkout@v4
+      
+      # Setup MSVC environment
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      
+      # Install Qt
+      - name: Install Qt
+        id: install-qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2'
+          arch: 'win64_msvc2019_64'
+      
+      # Find Qt installation directory
+      - name: Find Qt Directory
+        shell: pwsh
+        run: |
+          # The install-qt action sets Qt5_DIR environment variable
+          $qtPath = $env:Qt5_DIR
+          if (-Not $qtPath) {
+            # Fallback: search in common Qt installation locations
+            $possiblePaths = @(
+              "D:\a\QT_Car_Telltales_Cmake_Build\Qt\5.15.2\msvc2019_64",
+              "C:\Qt\5.15.2\msvc2019_64",
+              "${{ github.workspace }}\Qt\5.15.2\msvc2019_64"
+            )
+            
+            foreach ($path in $possiblePaths) {
+              if (Test-Path $path) {
+                $qtPath = $path
+                break
+              }
+            }
+          }
+          
+          Write-Output "Qt5_DIR from env: $env:Qt5_DIR"
+          Write-Output "Found Qt path: $qtPath"
+          Add-Content -Path $env:GITHUB_ENV -Value "QT_DIR=$qtPath"
+      
+      # Setup repository (call your batch script)
+      - name: Setup Repository
+        shell: cmd
+        run: |
+          echo "Running setup repository batch script..."
+          if exist "${{ github.workspace }}\Scripts\Setup_Repo.bat" (
+            call "${{ github.workspace }}\Scripts\Setup_Repo.bat" main
+          ) else (
+            echo "Setup_Repo.bat not found, skipping..."
+          )
+      
+      # Clean previous build
+      - name: Clean
+        shell: cmd
+        run: |
+          echo "Cleaning previous build files..."
+          if exist "${{ github.workspace }}\build" rmdir /S /Q "${{ github.workspace }}\build"
+          if exist "${{ github.workspace }}\CMakeCache.txt" del "${{ github.workspace }}\CMakeCache.txt"
+      
+      # CMake Configure
+      - name: CMake Configure
+        shell: cmd
+        run: |
+          echo "Configuring CMake project..."
+          cmake -S "${{ github.workspace }}" -B "${{ github.workspace }}\build" -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="${{ env.QT_DIR }}\lib\cmake"
+      
+      # CMake Build
+      - name: CMake Build
+        shell: cmd
+        run: |
+          echo "Building project..."
+          cmake --build "${{ github.workspace }}\build" --config Release
+      
+      # Deploy Qt DLLs
+      - name: Deploy Qt DLLs
+        shell: pwsh
+        run: |
+          $exePath = "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}"
+          $qtDir = "${{ env.QT_DIR }}"
+          $windeployqtPath = "$qtDir\bin\windeployqt.exe"
+          
+          Write-Output "Executable: $exePath"
+          Write-Output "Qt Directory: $qtDir"
+          Write-Output "Windeployqt: $windeployqtPath"
+          
+          if (Test-Path $exePath) {
+            Write-Output "Executable found: $exePath"
+            if (Test-Path $windeployqtPath) {
+              Write-Output "Running windeployqt..."
+              & "$windeployqtPath" "$exePath"
+              Write-Output "Deployment complete"
+            } else {
+              Write-Output "WARNING: windeployqt.exe not found at $windeployqtPath"
+              Write-Output "Skipping deployment, but continuing..."
+            }
+          } else {
+            Write-Output "ERROR: Executable not found at $exePath"
+            exit 1
+          }
+      
+      # Run executable for 60 seconds
+      - name: Run Executable
+        shell: pwsh
+        run: |
+          $exePath = "${{ github.workspace }}\build\Release\${{ env.EXE_NAME }}"
+          if (-Not (Test-Path $exePath)) {
+            Write-Error "Executable not found: $exePath"
+            exit 1
+          }
+          Write-Output "Starting QtTelltaleProject.exe..."
+          $p = Start-Process -FilePath $exePath -PassThru -NoNewWindow
+          Start-Sleep -Seconds 60
+          
+          if ($p.HasExited -eq $false) {
+            Stop-Process -Id $p.Id -Force
+            Write-Output "Executable stopped after 1 minute."
+          } else {
+            Write-Output "Executable exited before timeout."
+          }
+      
+      # Success message
+      - name: Build Success
+        if: success()
+        run: echo "✓ Build completed successfully!"
+      
+      # Failure message
+      - name: Build Failure
+        if: failure()
+        run: echo "✗ Build failed. Check logs above for errors."
