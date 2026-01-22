@@ -378,7 +378,7 @@ Jenkins receives webhook
 If new team member needs access:
 1. Request from Jenkins Administrator
 2. Administrator sends ngrok URL + credentials privately
-3. Team member logs in via provided URL
+3. Team member logs in via provided URL 
 4. Access is temporary and URL-specific
 
 ---
@@ -807,4 +807,5 @@ This CI/CD pipeline provides:
 - Use branch protection to enforce code quality
 
 Result: Main branch always contains tested, working code with secure, automated deployment pipeline.
+
 
